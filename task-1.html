@@ -1,0 +1,185 @@
+﻿<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="./style.css" />
+        <title>Task 1 Overview</title>
+    </head>
+    <body>
+        <main class="container">
+            <header>
+                <span class="badge">Task 1</span>
+                <h1>Key Pair Lifecycle for the Nautilus Migration</h1>
+                <p class="caption">
+                    Terraform controls RSA generation, cloud publication, and
+                    local storage
+                </p>
+            </header>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">🧭</span>
+                    <h2>Problem Statement</h2>
+                    <span class="section-sign">Must Have</span>
+                </div>
+                <p>
+                    A controlled AWS migration requires a Terraform-owned RSA
+                    key pair so later phases can launch instances without manual
+                    steps. The key must be named <strong>devops-kp</strong>, use
+                    the RSA algorithm, land in
+                    <code>/home/bob/devops-kp.pem</code>, and everything must
+                    live inside <code>/home/bob/terraform/main.tf</code>.
+                </p>
+                <p>
+                    The private key must never be handcrafted; Terraform needs
+                    to generate it and persist it locally so future steps rely
+                    on a known credential.
+                </p>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">💡</span>
+                    <h2>Approach &amp; Thinking</h2>
+                    <span class="section-sign">Strategy</span>
+                </div>
+                <div class="grid-two">
+                    <p>
+                        Generate TLS key material, register the public key in
+                        AWS, then write the private key to disk. This isolates
+                        responsibilities and keeps the pipeline modular.
+                    </p>
+                    <p>
+                        Alternative: run <code>ssh-keygen</code> manually.
+                        Downside: external dependencies break the self-contained
+                        requirement and hurt repeatability. Terraform-controlled
+                        generation is simpler, deterministic, and ready for
+                        rotation.
+                    </p>
+                </div>
+                <p>
+                    Using <code>local_file</code> ensures Terraform owns both
+                    cloud and controller artifacts, a must for this incremental
+                    migration.
+                </p>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">🛠️</span>
+                    <h2>Terraform Solution</h2>
+                    <span class="section-sign">Blueprint</span>
+                </div>
+                <div class="code-block">
+                    <pre><code>resource "tls_private_key" "devops_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_key_pair" "devops_kp" {
+  key_name   = "devops-kp"
+  public_key = tls_private_key.devops_key.public_key_openssh
+}
+
+resource "local_file" "save_to_local" {
+  content         = tls_private_key.devops_key.private_key_pem
+  filename        = "/home/bob/devops-kp.pem"
+  file_permission = "0600"
+}
+</code></pre>
+                </div>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">▶️</span>
+                    <h2>Execution Flow</h2>
+                    <span class="section-sign">Steps</span>
+                </div>
+                <ol>
+                    <li>
+                        <code>terraform init</code> in
+                        <code>/home/bob/terraform</code> to install the required
+                        providers.
+                    </li>
+                    <li>
+                        <code>terraform plan</code> to confirm the RSA key, AWS
+                        upload, and local file creation.
+                    </li>
+                    <li>
+                        <code>terraform apply</code> to run the plan, yield the
+                        key pair, and write the PEM file.
+                    </li>
+                </ol>
+                <p>
+                    Ensure AWS credentials and write permissions exist before
+                    applying.
+                </p>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">✔️</span>
+                    <h2>Why This Works</h2>
+                    <span class="section-sign">Proof</span>
+                </div>
+                <div class="grid-two">
+                    <p>
+                        <strong>tls_private_key</strong> satisfies RSA and keeps
+                        Terraform in control.
+                    </p>
+                    <p>
+                        <strong>aws_key_pair</strong> publishes the public key
+                        under the required name so cloud resources can consume
+                        it.
+                    </p>
+                </div>
+                <p>
+                    <strong>local_file</strong> writes the private key at the
+                    mandated path with secure permissions, closing the loop for
+                    future phases.
+                </p>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">⚠️</span>
+                    <h2>Common Mistakes</h2>
+                    <span class="section-sign">Watch</span>
+                </div>
+                <ul>
+                    <li>
+                        Generating the key externally and only uploading the
+                        public half via Terraform.
+                    </li>
+                    <li>
+                        Neglecting the <code>local_file</code> output and
+                        leaving the PEM only in state.
+                    </li>
+                    <li>
+                        Missing file permission restrictions and exposing the
+                        private key.
+                    </li>
+                    <li>
+                        Giving the key a different name or algorithm, breaking
+                        downstream expectations.
+                    </li>
+                </ul>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">🪄</span>
+                    <h2>Final Thoughts</h2>
+                    <span class="section-sign">Wrap Up</span>
+                </div>
+                <p>
+                    Terraform owning both the RSA material and its AWS
+                    registration keeps the Nautilus migration phases consistent,
+                    auditable, and ready for the next bit-sized launch.
+                </p>
+            </section>
+        </main>
+    </body>
+</html>

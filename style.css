@@ -1,0 +1,113 @@
+:root {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: #0e1726;
+    color: #f8fafc;
+}
+body {
+    margin: 0;
+    padding: 2rem;
+    background: linear-gradient(145deg, #0b1220, #15253b 60%, #0c0f1a);
+    min-height: 100vh;
+}
+.container {
+    max-width: 960px;
+    margin: 0 auto;
+    display: grid;
+    gap: 1.75rem;
+}
+h1 {
+    margin-bottom: 0.25rem;
+    font-size: 2.2rem;
+    letter-spacing: 0.04em;
+}
+.caption {
+    color: #94a3b8;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+}
+section {
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid #1f2937;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 20px 35px rgba(2, 6, 23, 0.7);
+}
+.section-title h2 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #a5b4fc;
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+}
+.section-title .icon {
+    font-size: 1.35rem;
+    line-height: 1;
+}
+.section-sign {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+section ul li::before {
+    content: "⚠";
+    display: inline-block;
+    margin-right: 0.45rem;
+}
+section ol li {
+    padding-left: 0.35rem;
+}
+section ol li::before {
+    content: "▶";
+    padding-right: 0.3rem;
+    color: #818cf8;
+}
+section p,
+section li {
+    color: #cbd5f5;
+    line-height: 1.6;
+    margin: 0.4rem 0;
+}
+section ol {
+    padding-left: 1.1rem;
+    margin: 0;
+}
+section ul {
+    padding-left: 1rem;
+    margin: 0;
+    list-style: disc;
+}
+.code-block {
+    background: #111827;
+    border: 1px solid #334155;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    font-family: "Fira Code", "SFMono-Regular", monospace;
+    font-size: 0.95rem;
+    overflow-x: auto;
+    margin-top: 1rem;
+}
+.badge {
+    display: inline-flex;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: #312e81;
+    color: #e0e7ff;
+    margin-bottom: 0.5rem;
+}
+.grid-two {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
