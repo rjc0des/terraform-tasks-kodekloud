@@ -1,0 +1,158 @@
+﻿<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="./style.css" />
+        <title>Create VPC Using Terraform</title>
+    </head>
+    <body>
+        <main class="container">
+            <header>
+                <span class="badge">Task 3</span>
+                <h1>Create VPC Using Terraform</h1>
+                <p class="caption">
+                    Stand up the Nautilus migration network foundation with Terraform
+                </p>
+            </header>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">🧩</span>
+                    <h2>Problem Statement</h2>
+                    <span class="section-sign">Must Have</span>
+                </div>
+                <p>
+                    Nautilus is breaking its AWS migration into small, observable phases. This task wants a single VPC called <strong>nautilus-vpc</strong> in <strong>us-east-1</strong> with a valid IPv4 CIDR block, managed entirely from the Terraform working directory at <code>/home/bob/terraform</code>. Everything must live in <code>/home/bob/terraform/main.tf</code> and the network resource must be created purely through Terraform.
+                </p>
+                <p>
+                    Deliver cloud networking that is repeatable, tag-driven, and easy to consume for later phases without touching the console.
+                </p>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">🧠</span>
+                    <h2>Approach &amp; Thinking</h2>
+                    <span class="section-sign">Strategy</span>
+                </div>
+                <div class="grid-two">
+                    <p>
+                        Use <code>aws_vpc</code> to declare the desired CIDR block, name, and region. Locking the configuration inside <code>main.tf</code> keeps the migration phase encapsulated so it can be reviewed and applied independently of later steps.
+                    </p>
+                    <p>
+                        Alternative would be to reuse a shared VPC, but that violates the incremental isolation requirement. Provisioning a dedicated VPC now avoids dependency collisions down the road and lets us tag it for discovery.
+                    </p>
+                </div>
+                <p>
+                    Keeping everything Terraform-native also lets future phases reference the VPC attributes directly through data sources instead of guessing manual IDs.
+                </p>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">🛠️</span>
+                    <h2>Terraform Solution</h2>
+                    <span class="section-sign">Blueprint</span>
+                </div>
+                <div class="code-block">
+                    <pre><code>resource "aws_vpc" "nautilus_vpc" {
+  cidr_block = "10.0.0.0/16"
+  tags = {
+    Name = "nautilus-vpc"
+  }
+}
+</code></pre>
+                </div>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">▶️</span>
+                    <h2>Step-by-Step Execution</h2>
+                    <span class="section-sign">Steps</span>
+                </div>
+                <ol>
+                    <li>
+                        Run <code>terraform init</code> in <code>/home/bob/terraform</code> to download the AWS provider (pinned implicitly by the working directory configuration).
+                    </li>
+                    <li>
+                        Run <code>terraform plan</code> to verify the CIDR, name tag, and region are correct before applying.
+                    </li>
+                    <li>
+                        Run <code>terraform apply</code> to create the VPC and persist the state for downstream phases.
+                    </li>
+                </ol>
+                <p>
+                    Required provider: <code>hashicorp/aws</code> configured for us-east-1 with valid credentials. Prerequisites: AWS IAM permissions for <code>ec2:CreateVpc</code> and network tagging, plus write access to <code>/home/bob/terraform</code>.
+                </p>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">✔️</span>
+                    <h2>Why This Works</h2>
+                    <span class="section-sign">Proof</span>
+                </div>
+                <div class="grid-two">
+                    <p>
+                        <strong>aws_vpc</strong> guarantees the CIDR block, tags, and lifecycle are managed by Terraform so the migration phase remains reproducible.
+                    </p>
+                    <p>
+                        Tagging with <code>Name = "nautilus-vpc"</code> satisfies visibility requirements and lets later automation reference the expected name instead of guessing IDs.
+                    </p>
+                </div>
+                <p>
+                    Keeping the logic inside <code>main.tf</code> matches the assessor requirement and ensures we know the exact resource created during review.
+                </p>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">📚</span>
+                    <h2>Reference to Terraform Docs</h2>
+                    <span class="section-sign">Concepts</span>
+                </div>
+                <p>
+                    <strong>aws_vpc</strong> defines AWS networking boundaries and exposes attributes such as the CIDR block and default tenancy. Terraform automatically tracks it in state, enabling dependency graphs and clean destroy sequences.
+                </p>
+                <p>
+                    <strong>Resource tagging</strong> through the <code>tags</code> map lets cloud operations find the VPC by name instead of digging through IDs.
+                </p>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">⚠️</span>
+                    <h2>Common Mistakes</h2>
+                    <span class="section-sign">Watch</span>
+                </div>
+                <ul>
+                    <li>
+                        Forgetting to pin the AWS region, which can land the VPC somewhere unexpected and break downstream automation.
+                    </li>
+                    <li>
+                        Omitting the <code>Name</code> tag so auditors or later tasks cannot find the expected VPC.
+                    </li>
+                    <li>
+                        Writing the VPC block in a different <code>.tf</code> file than <code>Main.tf</code>, violating the assignment instructions.
+                    </li>
+                    <li>
+                        Using a /24 CIDR that overlaps existing networks and causing routing conflicts for future migration phases.
+                    </li>
+                </ul>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">🪄</span>
+                    <h2>Final Thoughts</h2>
+                    <span class="section-sign">Wrap Up</span>
+                </div>
+                <p>
+                    This single Terraform resource produces a self-testsable network foundation that can be referenced by future workloads without manual tweaks, keeping the Nautilus migration predictable.
+                </p>
+            </section>
+        </main>
+    </body>
+</html>

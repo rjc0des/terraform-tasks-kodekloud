@@ -1,0 +1,187 @@
+﻿<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="./style.css" />
+        <title>Task 2 Security Group Story</title>
+    </head>
+    <body>
+        <main class="container">
+            <header>
+                <span class="badge">Task 2</span>
+                <h1>Nautilus Security Group for the Migration Sprint</h1>
+                <p class="caption">
+                    Capture the new phase by defining the trusted ingress rules for the default VPC
+                </p>
+            </header>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">📄</span>
+                    <h2>Problem Statement</h2>
+                    <span class="section-sign">Must Have</span>
+                </div>
+                <p>
+                    Nautilus is breaking the AWS migration into controlled steps. This piece needs a Terraform-managed security group named <strong>nautilus-sg</strong> inside the <strong>us-east-1</strong> default VPC, anchored in <code>/home/bob/terraform/main.tf</code>. The SG must have a clear description and allow HTTP (80) and SSH (22) from everywhere via explicit ingress rules.
+                </p>
+                <p>
+                    The goal is to tell reviewers that the group exists, why it guards production workloads, and how the migration remains repeatable without poking the console.
+                </p>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">🧠</span>
+                    <h2>Approach &amp; Thinking</h2>
+                    <span class="section-sign">Strategy</span>
+                </div>
+                <div class="grid-two">
+                    <p>
+                        Read the default VPC with <code>data "aws_vpc" "default"</code> so the SG attaches automatically, avoiding hard-coded IDs and keeping the stage isolated yet consistent with the existing account.
+                    </p>
+                    <p>
+                        Define the SG with the mandated name and description, then carve out two entrance rules via <code>aws_security_group_rule</code> resources to keep HTTP and SSH explicit. Everything stays inside <code>main.tf</code> so the migration sprint is auditable and simple to extend.
+                    </p>
+                </div>
+                <p>
+                    Locking the provider to us-east-1 keeps the plan predictable, while separating the ingress rules avoids Terraform drift when future engineers tweak ports.
+                </p>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">🛠️</span>
+                    <h2>Terraform Solution</h2>
+                    <span class="section-sign">Blueprint</span>
+                </div>
+                <div class="code-block">
+                    <pre><code>data "aws_vpc" "default" {
+  default = true
+}
+
+resource "aws_security_group" "nautilus_sg" {
+  name        = "nautilus-sg"
+  description = "Security group for Nautilus App Servers"
+  vpc_id      = data.aws_vpc.default.id
+  tags = {
+    Name = "nautilus-sg"
+  }
+}
+
+resource "aws_security_group_rule" "allow_http" {
+  type              = "ingress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.nautilus_sg.id
+  description       = "Allow HTTP from anywhere"
+}
+
+resource "aws_security_group_rule" "allow_ssh" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.nautilus_sg.id
+  description       = "Allow SSH from anywhere"
+}
+</code></pre>
+                </div>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">▶️</span>
+                    <h2>Step-by-Step Execution</h2>
+                    <span class="section-sign">Steps</span>
+                </div>
+                <ol>
+                    <li>
+                        <code>terraform init</code> inside <code>/home/bob/terraform</code> to download <code>hashicorp/aws</code> and register the default VPC data source.
+                    </li>
+                    <li>
+                        <code>terraform plan</code> to verify the security group name, description, and both ingress rules target ports 80 and 22 from <code>0.0.0.0/0</code>.
+                    </li>
+                    <li>
+                        <code>terraform apply</code> to create the security group in <code>us-east-1</code> and let the migration state capture the required ingress policy.
+                    </li>
+                </ol>
+                <p>
+                    Required provider: <code>hashicorp/aws</code> configured for <code>us-east-1</code>. Prerequisites: AWS credentials with <code>ec2:CreateSecurityGroup</code> and <code>ec2:AuthorizeSecurityGroupIngress</code>, plus write access to <code>/home/bob/terraform</code>.
+                </p>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">✔️</span>
+                    <h2>Why This Works</h2>
+                    <span class="section-sign">Proof</span>
+                </div>
+                <div class="grid-two">
+                    <p>
+                        <strong>data.aws_vpc.default</strong> ties the SG to the default network in the account without forcing manual edits, so the resource is immediately usable for the next migration wave.
+                    </p>
+                    <p>
+                        Splitting the ingress definitions into <strong>aws_security_group_rule</strong> keeps HTTP and SSH from being intertwined, making future adjustments straightforward and testable.
+                    </p>
+                </div>
+                <p>
+                    Keeping everything inside <code>main.tf</code> satisfies the constraint and makes the phase self-contained so reviewers can see exactly what Terraform will touch before downstream workloads rely on it.
+                </p>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">📚</span>
+                    <h2>Reference to Terraform Docs</h2>
+                    <span class="section-sign">Concepts</span>
+                </div>
+                <p>
+                    <strong>provider "aws"</strong> selects the us-east-1 endpoint and authenticates calls so the plan targets the correct region.
+                </p>
+                <p>
+                    <strong>data "aws_vpc" "default"</strong> reads the built-in VPC object, letting downstream resources reference its ID without copying it from the console.
+                </p>
+                <p>
+                    <strong>aws_security_group</strong> defines the logical group, while <strong>aws_security_group_rule</strong> resources carve out each ingress port with clear descriptions.
+                </p>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">⚠️</span>
+                    <h2>Common Mistakes</h2>
+                    <span class="section-sign">Watch</span>
+                </div>
+                <ul>
+                    <li>
+                        Forgetting to fetch the default VPC first, which results in a security group without any VPC ID and a failed apply.
+                    </li>
+                    <li>
+                        Nesting the ingress rules inside the <code>aws_security_group</code> block, which makes incremental updates and auditing harder.
+                    </li>
+                    <li>
+                        Omitting the <code>Name</code> or description, so reviewers cannot verify the resource intent during checkpoints.
+                    </li>
+                    <li>
+                        Targeting the wrong region or leaving the provider unspecified, which can silently create the SG in another account altogether.
+                    </li>
+                </ul>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">🪄</span>
+                    <h2>Final Thoughts</h2>
+                    <span class="section-sign">Wrap Up</span>
+                </div>
+                <p>
+                    This single-file configuration gives Nautilus a secure gateway for the migration sprint while staying grounded in Terraform conventions, making every future addition predictable and traceable.
+                </p>
+            </section>
+        </main>
+    </body>
+</html>
