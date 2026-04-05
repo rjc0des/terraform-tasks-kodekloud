@@ -111,3 +111,8 @@ section ul {
     gap: 1rem;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
+
+section li a {
+    color: #6c6cff;
+    text-decoration: none;
+}

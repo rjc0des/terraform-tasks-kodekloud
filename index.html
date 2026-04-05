@@ -1,0 +1,47 @@
+﻿<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="./style.css" />
+        <title>Nautilus Terraform Tasks</title>
+    </head>
+    <body>
+        <main class="container">
+            <header>
+                <span class="badge">Overview</span>
+                <h1>Nautilus Terraform Task Library</h1>
+                <p class="caption">Browse the migration-phase writeups and supporting blueprints</p>
+            </header>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">🗂️</span>
+                    <h2>Available Tasks</h2>
+                    <span class="section-sign">Select</span>
+                </div>
+                <ul>
+                    <li><strong>Task 1:</strong> <a href="task-1.html">Key Pair Lifecycle for the Nautilus Migration</a></li>
+                    <li><strong>Task 2:</strong> <a href="task-2.html">Nautilus Security Group for the Migration Sprint</a></li>
+                    <li><strong>Task 3:</strong> <a href="task-3.html">Create VPC Using Terraform</a></li>
+                </ul>
+                <p>
+                    Each page follows the same design system so reviewers can quickly understand the scope, reasoning, and Terraform code driving the incremental migration.
+                </p>
+            </section>
+
+            <section>
+                <div class="section-title">
+                    <span class="icon" aria-hidden="true">🧭</span>
+                    <h2>How to Use</h2>
+                    <span class="section-sign">Guide</span>
+                </div>
+                <ol>
+                    <li>Click a task link to read the problem, approach, and Terraform blueprint.</li>
+                    <li>Run <code>terraform init/plan/apply</code> inside <code>/home/bob/terraform</code> for the selected exercise.</li>
+                    <li>Make sure AWS credentials are configured and the required resources (key pair, VPC, default VPC) exist before applying.</li>
+                </ol>
+            </section>
+        </main>
+    </body>
+</html>
